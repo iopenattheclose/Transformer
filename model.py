@@ -50,3 +50,34 @@ class PositionalEncoding(nn.Module):
     def forward(self, x):
         x = x + (self.pe[:, x.shape[1], :]).requires_grad_(False)#not learning pe during back prop
         return self.dropout(x)
+    
+class LayerNormalization(nn.Module):
+    def __init__(self, eps : float = 10**-6)->None:
+        super().__init__()
+        self.eps = eps
+        #alpha and beta are parameters
+        self.alpha = nn.Parameter(torch.ones(1))
+        self.bias = nn.Parameter(torch.zeros(0))
+
+    def forward(self, x):
+        #calculating mean and std wrt last dimension ie d_model
+        mean = x.mean(dim=-1, keepdim = True)
+        std = x.std(dim=-1, keepdim = True)
+
+        return self.alpha * (x - mean)/(std+self.eps) + self.bias
+    
+
+
+#this is a fully connected layer
+class FeedForwadBlock(nn.Module):
+
+    def __init__(self, d_model:int, d_ff:int, dropout: float )->None:
+        super().__init__()
+        self.linear1 = nn.Linear(d_model,d_ff) #W1 and B1->B1 is already defined by tf
+        self.dropout = nn.Dropout(dropout)
+        self.linear2 = nn.Linear(d_ff, d_model) #w2 and B2
+
+    def forward(self, x):
+        #input is tensor with batch,seq_len,d_model --> Linear1 -> batch,seq_len,d_ff -->Linear2 -> batch,seq_len,d_model
+        return self.linear2(self.dropout(torch.relu((self.linear1(x)))))
+
