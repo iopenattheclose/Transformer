@@ -81,7 +81,7 @@ class FeedForwadBlock(nn.Module):
         #input is tensor with batch,seq_len,d_model --> Linear1 -> batch,seq_len,d_ff -->Linear2 -> batch,seq_len,d_model
         return self.linear2(self.dropout(torch.relu((self.linear1(x)))))
 
-class MultiHeadAttention(nn.Module):
+class MultiHeadAttentionBlock(nn.Module):
 
     def __init__(self,d_model: int, heads :int, dropout:float)->None:
         super().__init__()
@@ -118,7 +118,7 @@ class MultiHeadAttention(nn.Module):
         key = key.view(key.shape[0], key.shape[1], self.heads, self.dk).transpose(1,2)
         value = value.view(value.shape[0], value.shape[1], self.heads, self.dk).transpose(1,2)
 
-        x, self.attention_scores = MultiHeadAttention.attention(query,key,value,self.dropout)
+        x, self.attention_scores = MultiHeadAttentionBlock.attention(query,key,value,self.dropout)
 
         #batch,h,seq_len,dk -> batch,seq_len,h,dk --> batch,seq_len,d_model
         #concat all the heads into a single matrix of size batch, seq_len, d_model
@@ -142,7 +142,41 @@ class MultiHeadAttention(nn.Module):
         return (attention_scores @ value), attention_scores
 
 
+#for skip connecttions
+class ResidualConnection(nn.Module):
+    def __init__(self, dropout: float)->None:
+        super().__init__()
+        self.dropout = nn.Dropout(dropout)
+        self.norm = LayerNormalization()
 
+    def forward(self, x, sublayer):
+        return x + self.dropout(sublayer(self.norm(x)))
+
+#this represents one encoder block consisting of 1 MHA, 2 add&norm(residual) and 1 feed forward
+#output of one encoder will be input of next encoder.....n times and output of last encoder will be decoder input
+class EncoderBlock(nn.Module):
+    def __init__(self, self_attention_block: MultiHeadAttentionBlock, feed_forward_block : FeedForwadBlock, dropout :float) -> None:
+        super().__init__()
+        self.self_attention_block = self_attention_block
+        self.feed_forward_block = feed_forward_block
+        self.residual_connection = nn.ModuleList([ResidualConnection(dropout) for _ in range(2)])
+
+    def forward(self, x , src_mask):
+        #src_msk id required to hide interaction of padding word with other words
+        x = self.residual_connections[0](x, lambda x : self.self_attention_block(x,x,x,src_mask))
+        x = self.residual_connections[1](x, self.feed_forward_block)
+        return x
+
+class Encoder(nn.Module):
+    def __init__(self,layers : nn.ModuleList )-> None:
+        super().__init__()
+        self.layers = layers
+        self.norm = LayerNormalization()
+
+    def forward(self, x, mask):
+        for layer in self.layers:
+            x = layer(x,mask)
+        return self.norm(x)
 
 
 
