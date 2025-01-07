@@ -218,6 +218,30 @@ class ProjectionLayer(nn.Module):
         return torch.log_softmax(self.proj(x), dim=-1)
 
 
+class Transformer(nn.Module):
+    def __init__(self, encoder:Encoder, decoder:Decoder, src_embedding: InputEmbeddings, tgt_embedding:InputEmbeddings, src_position:PositionalEncoding, tgt_position:PositionalEncoding, projection_layer = ProjectionLayer)->None:
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.src_embedding = src_embedding
+        self.tgt_embedding = tgt_embedding
+        self.src_position = src_position
+        self.tgt_position = tgt_position
+        self.projection_layer = projection_layer
+
+    def encode(self, src, src_mask):
+        #calling self.src_embedding(src) in the Transformer class directly calls the forward method of the InputEmbeddings class and returns the processed embeddings.
+        src = self.src_embedding(src)
+        src = self.src_position(src)
+        return self.encoder(src,src_mask)
+
+    def decode(self, encoder_output, src_mask, tgt, tgt_mask):
+
+
+
+
+
+
 
 
 
