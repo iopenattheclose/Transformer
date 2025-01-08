@@ -252,7 +252,45 @@ def build_transformer(src_vocab_size : int, tgt_vocab_size: int, src_seq_len: in
     src_embed = InputEmbeddings(d_model,src_vocab_size)
     tgt_embed = InputEmbeddings(d_model, tgt_vocab_size)
     #create positional encoding layer
-    
+    src_pos = PositionalEncoding(d_model, src_seq_len, dropout)
+    tgt_pos = PositionalEncoding(d_model, tgt_seq_len, dropout)
+    #create encoder block
+    encoder_blocks = []
+    for _ in range(N):
+        encoder_self_attention_block = MultiHeadAttentionBlock(d_model,h,dropout)
+        feed_forward_block = FeedForwadBlock(d_model, d_ff,dropout)
+        encoder_block = EncoderBlock(encoder_self_attention_block, feed_forward_block, dropout)
+        encoder_blocks.append(encoder_block)
+
+    #create decoder block
+    decoder_blocks = []
+    for _ in range(N):
+        decoder_self_attention_block = MultiHeadAttentionBlock(d_model,h,dropout)
+        decoder_cross_attention_block = MultiHeadAttentionBlock(d_model,h,dropout)
+        feed_forward_block = FeedForwadBlock(d_model, d_ff,dropout)
+        decoder_block = DecoderBlock(decoder_self_attention_block,decoder_cross_attention_block, feed_forward_block, dropout)
+        decoder_blocks.append(decoder_block)
+
+    #create encoder and decoder
+    encoder = Encoder(nn.ModuleList(encoder_blocks))
+    decoder = Decoder(nn.ModuleList(decoder_blocks))
+
+    #create projection layer
+    projecttion_layer = ProjectionLayer(d_model, tgt_vocab_size)
+
+    #create the transformer
+    transformer = Transformer(encoder,decoder, src_embed, tgt_embed,src_pos,tgt_pos, projecttion_layer)
+
+    #Initialize the parameters - make training fasters(Xavier)
+    for p in transformer.parameters():
+        if p.dim() > 1:
+            nn.init.xavier_uniform_(p)
+
+    return transformer
+
+
+
+
 
 
 
