@@ -59,3 +59,8 @@ def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_
         source_texts = []
         expected = []
         predicted = []
+
+        try:
+            pass
+        except:
+            pass
