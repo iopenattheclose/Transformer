@@ -51,3 +51,11 @@ def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_
             break
 
     return decoder_input.squeeze(0)
+
+    def run_validation(model, validation_ds, tokenizer_src, tokenizer_tgt, max_len, device, print_msg, global_step, writer, num_examples=2):
+        model.eval()
+        count = 0
+
+        source_texts = []
+        expected = []
+        predicted = []
