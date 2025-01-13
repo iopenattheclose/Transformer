@@ -42,7 +42,11 @@ def get_all_sentences(dataset, language):
 
 
  def get_dataset(config):
-    
+    ds_raw = load_dataset('opus_books',f'{config["lang_src"]}-{config["lang_tgt"]}', split='train')
+
+    #bbuild tokenizer
+    tokenizer_src = 
+
 
 
 # def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_len, device):
