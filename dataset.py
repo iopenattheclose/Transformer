@@ -18,7 +18,17 @@ class BiLingualDataset(Dataset):
         self.eos_token = torch.Tensor([tokenzier_src.token_to_id(['[EOS]'])], dtype = torch.int64)
         self.pad_token = torch.Tensor([tokenzier_src.token_to_id(['[PAD]'])], dtype = torch.int64)
 
-        
+    def __len__(self):
+        return len(self.ds)
+    
+    def __getitem__(self, index):
+        src_tgt_pair = self.ds[index]
+        src_text = src_tgt_pair['translation'][self.src_lan]
+        tgt_text = src_tgt_pair['translation'][self.tgt_lang]
+
+        enc_input_tokens = self.tokenzier_src.encode(src_text).ids
+        dec_input_tokens  = self.tokenzier_tgt.encode(tgt_text).ids
+
 
 
 
