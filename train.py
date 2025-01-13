@@ -41,11 +41,19 @@ def get_all_sentences(dataset, language):
         yield item['translation'][language]
 
 
- def get_dataset(config):
+def get_dataset(config):
     ds_raw = load_dataset('opus_books',f'{config["lang_src"]}-{config["lang_tgt"]}', split='train')
 
     #bbuild tokenizer
-    tokenizer_src = 
+    tokenizer_src = get_or_build_tokenizer(config, ds_raw, config['lang_src'])
+    tokenizer_tgt = get_or_build_tokenizer(config, ds_raw, config['lang_tgt'])
+
+    #train test split 80 20 or 90 10
+    train_ds_size = int(0.9 * len(ds_raw))
+    val_ds_size = len(ds_raw) - train_ds_size
+    train_ds_raw, val_ds_raw = random_split(ds_raw,[train_ds_size, val_ds_size])
+    
+
 
 
 
