@@ -29,6 +29,28 @@ class BiLingualDataset(Dataset):
         enc_input_tokens = self.tokenzier_src.encode(src_text).ids
         dec_input_tokens  = self.tokenzier_tgt.encode(tgt_text).ids
 
+        enc_num_padding_tokens = self.seq_len - len(enc_input_tokens) - 2
+        dec_num_padding_tokens = self.seq_len - len(enc_input_tokens) - 1
 
+        if(enc_num_padding_tokens < 0 or dec_num_padding_tokens < 0):
+            raise ValueError('Sentence is too long')
+
+        #add sos and eos to src text tokens
+        encoder_input = torch.cat(
+            self.sos_token,
+            torch.tensor(enc_num_padding_tokens, dtype=torch.int64),
+            self.eos_token,
+            torch.tensor([self.pad_token] * enc_num_padding_tokens,dtype=torch.int64)
+        )
+
+        decoder_input = torch.concat(
+            self.sos_token,
+            torch.tensor(dec_num_padding_tokens, dtype=torch.int64),
+            torch.tensor([self.pad_token] * dec_num_padding_tokens,dtype=torch.int64)
+        )
+
+        label = torch.cat(
+            
+        )
 
 
