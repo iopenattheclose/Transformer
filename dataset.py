@@ -67,11 +67,16 @@ class BiLingualDataset(Dataset):
         return {"encoder_input" :encoder_input, #seq_len
                 "decoder_input" :decoder_input, #seq_len
                 "enoder_mask"   :(encoder_input != self.pad_token).unsqueeze(0).unsqueeze(0).int(), #ignore pad token during self attention (1,1,seq_len)
-                "decoder_mask"  :(decoder_input != self.pad_token).unsqueeze(0).unsqueeze(0).int & causal_mask(decoder_input.size(0)) #(1,seq_len) & (1,1,seq_len)
+                "decoder_mask"  :(decoder_input != self.pad_token).unsqueeze(0).unsqueeze(0).int & causal_mask(decoder_input.size(0)), #(1,seq_len) & (1,1,seq_len)
+                "label" : label,
+                "src_text": src_text,
+                "tgt_text": tgt_text,
         }
 
 def causal_mask(decoder_input_size):
-    
+    mask = torch.triu(torch.ones(1, decoder_input_size, decoder_input_size), diagonal=1).type(torch.int)
+    return mask == 0
+
 
 
 
