@@ -9,6 +9,7 @@ from torch.optim.lr_scheduler import LambdaLR
 
 from model import build_transformer
 
+from config import get_config,get_weights_file_path
 import warnings
 from tqdm import tqdm
 import os
@@ -81,7 +82,33 @@ def get_model(config, vocab_src_len, vocab_tgt_len):
     model = build_transformer(vocab_src_len, vocab_tgt_len, config['seq_len'], config['seq_len'], config['d_model'])
     return model
 
+def train_model(config):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Using device {device}')
 
+    Path(config['model_folder']).mkdir(parents=True, exist_ok=True)
+    train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt= get_dataset(config)
+    model = get_model(config, tokenizer_src.get_vocab_size(), tokenizer_tgt.gget_vocab_size()).to(device)
+
+    #tensorboard
+
+    writer = SummaryWriter(config['experiment_name'])
+    optimizer = torch.optim.adam(model.parameters(), lr=config['lr'], eps=1e-9)
+
+    #resume training if model crashes
+
+    initial_epoch = 0
+    global_step = 0
+    if config['preload']:
+        model_filename = get_weights_file_path(config, config['preload'])
+        print(f'Preloading model {model_filename}')
+        state = torch.load(model_filename)
+
+        initial_epoch = state['epoch']+1
+        optimizer.load_state_dict(state['optimizer_state_dict'])
+        global_step = state['global_step']
+
+    loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer_src.token_to_id('[PAD]', ))
 
 
 
