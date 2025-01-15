@@ -7,6 +7,8 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torch.optim.lr_scheduler import LambdaLR
 
+from model import build_transformer
+
 import warnings
 from tqdm import tqdm
 import os
@@ -73,6 +75,12 @@ def get_dataset(config):
     val_dataloader = DataLoader(val_ds, batch_size = 1, shuffle=True)
 
     return train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt
+
+
+def get_model(config, vocab_src_len, vocab_tgt_len):
+    model = build_transformer(vocab_src_len, vocab_tgt_len, config['seq_len'], config['seq_len'], config['d_model'])
+    return model
+
 
 
 
