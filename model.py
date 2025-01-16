@@ -186,7 +186,7 @@ class DecoderBlock(nn.Module):
         self.cross_attention_block = cross_attention_block
         self.feed_forward_block = feed_forward_block
         #check this module list or only module
-        self.residual_connection = nn.Module([ResidualConnection(dropout) for _ in range(3)])
+        self.residual_connection = nn.ModuleList([ResidualConnection(dropout) for _ in range(3)])
 
     def forward(self, x ,encoder_output, src_mask, tgt_mask):
         #src_mask, tgt_mask is req for translation prob

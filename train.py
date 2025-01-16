@@ -19,8 +19,8 @@ from dataset import BiLingualDataset,causal_mask
 
 # Huggingface datasets and tokenizers
 from datasets import load_dataset
-from tokenizer import Tokenizer
-from tokenizer import WordLevel
+from tokenizers import Tokenizer
+from tokenizers.models import WordLevel
 from tokenizers.trainers import WordLevelTrainer
 from tokenizers.pre_tokenizers import Whitespace
 
@@ -47,26 +47,26 @@ def get_all_sentences(dataset, language):
 
 
 def get_dataset(config):
-    ds_raw = load_dataset('opus_books',f'{config["lang_src"]}-{config["lang_tgt"]}', split='train')
+    ds_raw = load_dataset('opus_books',f'{config["src_lan"]}-{config["tgt_lan"]}', split='train')
 
     #bbuild tokenizer
-    tokenizer_src = get_or_build_tokenizer(config, ds_raw, config['lang_src'])
-    tokenizer_tgt = get_or_build_tokenizer(config, ds_raw, config['lang_tgt'])
+    tokenizer_src = get_or_build_tokenizer(config, ds_raw, config['src_lan'])
+    tokenizer_tgt = get_or_build_tokenizer(config, ds_raw, config['tgt_lan'])
 
     #train test split 80 20 or 90 10
     train_ds_size = int(0.9 * len(ds_raw))
     val_ds_size = len(ds_raw) - train_ds_size
     train_ds_raw, val_ds_raw = random_split(ds_raw,[train_ds_size, val_ds_size])
 
-    train_ds = BiLingualDataset(train_ds_raw, tokenizer_src, config['lang_src'],config['tgt_src'],config['seq_len'])
-    val_ds = BiLingualDataset(val_ds_raw, tokenizer_src, config['lang_src'],config['tgt_src'],config['seq_len'])
+    train_ds = BiLingualDataset(train_ds_raw, tokenizer_src,tokenizer_tgt, config['src_lan'],config['tgt_lan'],config['seq_len'])
+    val_ds = BiLingualDataset(val_ds_raw, tokenizer_src,tokenizer_tgt, config['src_lan'],config['tgt_lan'],config['seq_len'])
 
     max_len_src = 0
     max_len_tgt = 0
 
     for item in ds_raw:
-        src_ids = tokenizer_src.encode(item['translation'][config['lang_src']]).ids
-        tgt_ids = tokenizer_src.encode(item['translation'][config['lang_tgt']]).ids
+        src_ids = tokenizer_src.encode(item['translation'][config['src_lan']]).ids
+        tgt_ids = tokenizer_src.encode(item['translation'][config['tgt_lan']]).ids
         max_len_src = max(max_len_src, len(src_ids))
         max_len_tgt= max(max_len_tgt, len(tgt_ids))
 
@@ -88,12 +88,12 @@ def train_model(config):
 
     Path(config['model_folder']).mkdir(parents=True, exist_ok=True)
     train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt= get_dataset(config)
-    model = get_model(config, tokenizer_src.get_vocab_size(), tokenizer_tgt.gget_vocab_size()).to(device)
+    model = get_model(config, tokenizer_src.get_vocab_size(), tokenizer_tgt.get_vocab_size()).to(device)
 
     #tensorboard
 
     writer = SummaryWriter(config['experiment_name'])
-    optimizer = torch.optim.adam(model.parameters(), lr=config['lr'], eps=1e-9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], eps=1e-9)
 
     #resume training if model crashes
 
@@ -148,7 +148,7 @@ def train_model(config):
             global_step += 1
 
         # Run validation at the end of every epoch
-        run_validation(model, val_dataloader, tokenizer_src, tokenizer_tgt, config['seq_len'], device, lambda msg: batch_iterator.write(msg), global_step, writer)
+        # run_validation(model, val_dataloader, tokenizer_src, tokenizer_tgt, config['seq_len'], device, lambda msg: batch_iterator.write(msg), global_step, writer)
 
         # Save the model at the end of every epoch
         model_filename = get_weights_file_path(config, f"{epoch:02d}")
@@ -160,9 +160,10 @@ def train_model(config):
         }, model_filename)
 
 
-
-
-
+if __name__=="__main__":
+    warnings.filterwarnings('ignore')
+    config = get_config()
+    train_model(config)
 
 
 
